@@ -8,7 +8,7 @@ print('----------------------------')
 for q,w,e,r,t,y in tw:
   print(q,w,e,r,t,y)
 """
-import cv2 as cv
+""" import cv2 as cv
 import tensorflow as tf
 
 print(tf.__version__)
@@ -16,3 +16,5 @@ print(tf.__version__)
 a=cv.imread('child.png')
 print(a)
 cv.imshow('child.png', a)
+cv.waitKey(0) """
+

@@ -24,6 +24,7 @@
  - 6-4는 traffic1.jpg, traffic2.jpg, traffic3.jpg에 대해서 실습 진행할 것
   (6-4에서 도로 이미지가 출력되지 않고 프로그램이 종료되면 경로에 한글이 포함되지 않은 곳으로 이동하여 진행할 것)
 """
+""" 
 import cv2 as cv
 import numpy as np
 from PyQt5.QtWidgets import *
@@ -62,13 +63,13 @@ class TrafficWeak(QMainWindow): #GUI 애플리케이션 메인 윈도우 클래�
         self.signImgs=[]    #표지만 모델 영상 저장
 
     def signFunction(self): #표지판 등록 버튼이 눌렸을때 실행될 함수
-        self.label.clear() #레이블에 표시된 텍스트 지우기
+        self.label.clear()  #레이블에 표시된 텍스트 지우기
         self.label.setText('교통 약자표지판을 등록합니다.') #레이블에 표시될 텍스트 설정
         
         #signFiles의 하위 배열의 각 요소를 fname, _로 받아옴, _는 일반적으로 사용되지 않는 변수를 의미.
         for fname,_ in self.signFiles:      
             self.signImgs.append(cv.imread(fname))  #signImgs에 이미지 파일을 읽어서 추가
-            cv.imshow(fname, self.signImgs[-1])    #마지막으로 추가된 이미지를 표시, 타이틀은 fname으로 설정
+            cv.imshow(fname, self.signImgs[-1])     #마지막으로 추가된 이미지를 표시, 타이틀은 fname으로 설정
     
     def roadFunction(self): #도로 영상 불러오기 버튼이 눌렸을때 실행될 함수
         if self.signImgs==[]:   #signImgs가 비어있으면
@@ -90,8 +91,9 @@ class TrafficWeak(QMainWindow): #GUI 애플리케이션 메인 윈도우 클래�
             for img in self.signImgs:   #signImgs의 각 요소를 img로 받아옴
                 gray=cv.cvtColor(img, cv.COLOR_BGR2GRAY)    #img를 그레이스케일로 변환
                 KD.append(sift.detectAndCompute(gray, None))   #그레이스케일로 변환된 이미지의 전체에서 특징점 검출 및 디스크립터 계산하여 KD에 추가
+            
             grayRoad=cv.cvtColor(self.roadImg, cv.COLOR_BGR2GRAY)   #roadImg를 그레이스케일로 변환
-            road_kp, road_des=sift.detectAndCompuute(grayRoad, None)    #그레이스케일로 변환된 이미지의 전체에서 특징점 검출 및 디스크립터 계산하여 각각 변수에 할당
+            road_kp, road_des=sift.detectAndCompute(grayRoad, None)    #그레이스케일로 변환된 이미지의 전체에서 특징점 검출 및 디스크립터 계산하여 각각 변수에 할당
 
             matcher=cv.DescriptorMatcher_create(cv.DESCRIPTOR_MATCHER_FLANNBASED)   #특징점 디스크립터를 매칭하는 객체 생성, FLANN 기반 매칭 알고리즘 사용
             GM=[]   #빈 리스트 생성
@@ -104,48 +106,48 @@ class TrafficWeak(QMainWindow): #GUI 애플리케이션 메인 윈도우 클래�
                         good_match.append(nearest1)   #good_match에 nearest1 추가
                 GM.append(good_match)   #good_match를 GM에 추가
                 
-                best=GM.index(max(GM,key=len))  #GM의 요소 중 가장 긴 요소의 인덱스를 best에 저장
-                
-                if len(GM[best])<4:  #GM의 best번째 요소의 길이가 4보다 작으면
-                    self.label.setText('표지판이 없습니다') #레이블에 '표지판이 없습니다' 표시
-                else:
-                    sign_kp=KD[best][0]   #KD의 best번째 요소의 0번째 요소를 sign_kp에 저장
-                    good_match=GM[best]   #GM의 best번째 요소를 good_match에 저장
+            best=GM.index(max(GM,key=len))  #GM의 요소 중 가장 긴 요소의 인덱스를 best에 저장
+            
+            if len(GM[best])<4:  #GM의 best번째 요소의 길이가 4보다 작으면
+                self.label.setText('표지판이 없습니다') #레이블에 '표지판이 없습니다' 표시
+            else:
+                sign_kp=KD[best][0]   #KD의 best번째 요소의 0번째 요소를 sign_kp에 저장
+                good_match=GM[best]   #GM의 best번째 요소를 good_match에 저장
 
-                    poinsts1=np.float32([sign_kp[gm.queryIdx].pt for gm in good_match]) #
-                    poinsts2=np.float32([road_kp[gm.trainIdx].pt for gm in good_match]) 
+                poinsts1=np.float32([sign_kp[gm.queryIdx].pt for gm in good_match]) #첫 번째 이미지의 특징점 좌표를 numpy 배열로 전환해 poinsts1에 저장
+                poinsts2=np.float32([road_kp[gm.trainIdx].pt for gm in good_match]) #두 번째 이미지의 특징점 좌표를 numpy 배열로 전환해 poinsts2에 저장
 
-                    H, _=cv.findHomography(poinsts1, poinsts2, cv.RANSAC)   
-                    h1,w1=self.signImgs[best].shape[0],self.roadImg.shape[1]    
-                    h2,w2=self.roadImg.shape[0],self.roadImg.shape[1]
+                H, _=cv.findHomography(poinsts1, poinsts2, cv.RANSAC)   #poinsts1과 poinsts2의 호모그래피 행렬을 H에 저장
 
-                    box1=np.float32([[0,0],[0,h1-1],[w1-1,h1-1],[w1-1,0]]).reshape(4,1,2)
-                    box2=cv.perspectiveTransform(box1,H)
+                h1,w1=self.signImgs[best].shape[0],self.signImgs[best].shape[1]    #표지판 영상의 크기
+                h2,w2=self.roadImg.shape[0],self.roadImg.shape[1]   #도로 영상의 크기
 
-                    self.roadImg=cv.polylines(self.roadImg, [np.int32(box2)], True, (0,255,0), 5)
+                box1=np.float32([[0,0],[0,h1-1],[w1-1,h1-1],[w1-1,0]]).reshape(4,1,2)   #바운딩 박스의 네 꼭짓점을 numpy배열로 정의하여 box1에 저장(4개의 점, 각 하나의 배열, 2차원 좌표)
+                box2=cv.perspectiveTransform(box1,H)    #box1에 H에 맞추어 투영 변환을 적용하여 box2에 저장
+###
+                self.roadImg=cv.polylines(self.roadImg, [np.int32(box2)], True, (0,255,0), 5)   #주어진 좌표들을 닫힌 다각형으로 표시, 라인 색 녹색, 두께 5
 
-                    img_match=np.empty((max(h1,h2),w1+w2,3), dtype=np.uint8)
-                    cv.drawMatrches(self.signImgs[best], sign_kp, self.roadImg, road_kp,
-                                    good_match, img_match, flags=cv.DrawMatchesFlags_NOT_DRAW_SINGLE_POINTS)
-                    cv.imshow('Matches and Homography', img_match)
-                    self.label.setText(self.signFiles[best][1]+'보호구역입니다. 30km로 서행하세요.')
-                    winsound.Beep(3000,500)
+                img_match=np.empty((max(h1,h2),w1+w2,3), dtype=np.uint8)    #8비트 정수형 텐서 생성, 높이는 h1과 h2 중 큰 값, 너비는 w1과 w2의 합, 3채널
+                cv.drawMatches(self.signImgs[best], sign_kp, self.roadImg, road_kp, good_match, img_match, flags=cv.DrawMatchesFlags_NOT_DRAW_SINGLE_POINTS)    #singImgs의 best번째 이미지와 roadImg의 매칭 결과를 img_match에 저장, 매칭되지 않은 점은 그리지 않음
+                cv.imshow('Matches and Homography', img_match)  #타이틀을 'Matches and Homography'로 설정하여 img_match 표시
+                self.label.setText(self.signFiles[best][1]+'보호구역입니다. 30km로 서행하세요.')    #레이블에 표시할 텍스트 설정
+                winsound.Beep(3000,500) #비프음 재생
 
     def quitFunction(self): #나가기 버튼이 눌렸을때 실행될 함수
-        cv.destroyAllWindows()
-        self.close()
+        cv.destroyAllWindows()  #모든 창을 닫음
+        self.close()    #윈도우를 닫음
 
-app=QApplication(sys.argv)
-win=TrafficWeak()
-win.show()
-app.exec_() 
-
+app=QApplication(sys.argv)  #GUI 어플리케이션 인스턴스 생성
+win=TrafficWeak()  #TrafficWeak 인스턴스 생성
+win.show()  #TrafficWeak 인스턴스를 화면에 표시
+app.exec_() #어플리케이션 실행
+ """
 """ 
 5. 강의교안의 프로그램 7-1를 실습하시오.
  - 주석 달 것
  - 프로그램 소스코드와 실행결과 첨부할 것
 """
-""" 
+
 import tensorflow as tf
 import tensorflow.keras.datasets as ds
 import matplotlib.pyplot as plt
@@ -170,4 +172,3 @@ for i in range(10):
     plt.imshow(x_train[i])
     plt.xticks([]); plt.yticks([])
     plt.title(class_names[y_train[i,0]],fontsize=30)
- """
