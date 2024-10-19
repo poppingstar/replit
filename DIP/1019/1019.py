@@ -52,36 +52,35 @@ class TrafficWeak(QMainWindow): #GUI 애플리케이션 메인 윈도우 클래�
         quitbutton.setGeometry(510,10,100,30)
         self.label.setGeometry(10,40,600,170)
         
-        #버튼이 클릭되었을때 호출될 함수 설정
+        #버튼이 클릭되었을때 호출될 함수 바인드
         signButton.clicked.connect(self.signFunction)
         roadButton.clicked.connect(self.roadFunction)
         recognitionButton.clicked.connect(self.recognitionFunction)
         quitbutton.clicked.connect(self.quitFunction)
 
-        #이미지와
-        self.signFiles=[['child.png', '어린이'], ['elder.png', '노인'], ['disabled.png', '장애인']]
-        self.signImgs=[]
+        self.signFiles=[['child.png', '어린이'], ['elder.png', '노인'], ['disabled.png', '장애인']] #표지판 모델 영상
+        self.signImgs=[]    #표지만 모델 영상 저장
 
-    def signFunction(self):
+    def signFunction(self): #표지판 등록 버튼이 눌렸을때 실행될 함수
         self.label.clear() #레이블에 표시된 텍스트 지우기
         self.label.setText('교통 약자표지판을 등록합니다.') #레이블에 표시될 텍스트 설정
         
         #signFiles의 하위 배열의 각 요소를 fname, _로 받아옴, _는 일반적으로 사용되지 않는 변수를 의미.
         for fname,_ in self.signFiles:      
             self.signImgs.append(cv.imread(fname))  #signImgs에 이미지 파일을 읽어서 추가
-            cv.imshow(fname, self.sighImgs[-1])    #마지막으로 추가된 이미지를 표시, 타이틀은 fname으로 설정
+            cv.imshow(fname, self.signImgs[-1])    #마지막으로 추가된 이미지를 표시, 타이틀은 fname으로 설정
     
-    def roadFunction(self):
+    def roadFunction(self): #도로 영상 불러오기 버튼이 눌렸을때 실행될 함수
         if self.signImgs==[]:   #signImgs가 비어있으면
             self.label.setText('먼저 표지판을 등록하세요.') #레이블에 '표지판을 등록하세요' 표시
         else:                                                  #signImgs가 비어있지 않으면
             fname=QFileDialog.getOpenFileName(self, '파일 읽기', './')  #현재 윈도우를 부모로, 대화 상자의 제목을 파일 읽기로, 초기 경로는 현재 위치
             self.roadImg=cv.imread(fname[0])    #반환된 파일 경로의 이미지를 읽어옴
-            if self.roadImg is not None: sys.exit('파일을 찾을 수 없습니다')    #이미지가 없을 시 예외처리
+            if self.roadImg is None: sys.exit('파일을 찾을 수 없습니다')    #이미지가 없을 시 예외처리
 
             cv.imshow('Road scene', self.roadImg)   #타이틀을 'Road scene'으로 설정하여 불러온 이미지 표시
 
-    def recognitionFunction(self):
+    def recognitionFunction(self):  #인식 버튼이 눌렸을때 실행될 함수
         if self.roadImg is None:    #roadImg가 비어있으면
             self.label.setText('먼저 도로 영상을 불러오세요.')  #레이블에 '먼저 도로 영상을 불러오세요' 표시
         else:
@@ -106,18 +105,18 @@ class TrafficWeak(QMainWindow): #GUI 애플리케이션 메인 윈도우 클래�
                 GM.append(good_match)   #good_match를 GM에 추가
                 
                 best=GM.index(max(GM,key=len))  #GM의 요소 중 가장 긴 요소의 인덱스를 best에 저장
-                #78부터
-                if len(GM[best])<4:
-                    self.label.setText('표지판이 없습니다')
+                
+                if len(GM[best])<4:  #GM의 best번째 요소의 길이가 4보다 작으면
+                    self.label.setText('표지판이 없습니다') #레이블에 '표지판이 없습니다' 표시
                 else:
                     sign_kp=KD[best][0]   #KD의 best번째 요소의 0번째 요소를 sign_kp에 저장
                     good_match=GM[best]   #GM의 best번째 요소를 good_match에 저장
 
-                    poinsts1=np.float32([sign_kp[gm.queryIdx].pt for gm in good_match])
-                    poinsts2=np.float32([road_kp[gm.trainIdx].pt for gm in good_match])
+                    poinsts1=np.float32([sign_kp[gm.queryIdx].pt for gm in good_match]) #
+                    poinsts2=np.float32([road_kp[gm.trainIdx].pt for gm in good_match]) 
 
                     H, _=cv.findHomography(poinsts1, poinsts2, cv.RANSAC)   
-                    h1,w1=self.signImgs[best].shape[0],self.roadImg.shape[1]
+                    h1,w1=self.signImgs[best].shape[0],self.roadImg.shape[1]    
                     h2,w2=self.roadImg.shape[0],self.roadImg.shape[1]
 
                     box1=np.float32([[0,0],[0,h1-1],[w1-1,h1-1],[w1-1,0]]).reshape(4,1,2)
@@ -132,7 +131,7 @@ class TrafficWeak(QMainWindow): #GUI 애플리케이션 메인 윈도우 클래�
                     self.label.setText(self.signFiles[best][1]+'보호구역입니다. 30km로 서행하세요.')
                     winsound.Beep(3000,500)
 
-    def quitFunction(self):
+    def quitFunction(self): #나가기 버튼이 눌렸을때 실행될 함수
         cv.destroyAllWindows()
         self.close()
 
@@ -146,11 +145,12 @@ app.exec_()
  - 주석 달 것
  - 프로그램 소스코드와 실행결과 첨부할 것
 """
+""" 
 import tensorflow as tf
 import tensorflow.keras.datasets as ds
 import matplotlib.pyplot as plt
 
-(x_train, y_train), (x_test, y_test)=keras.datasets.mnist.load_data()  #mnist 데이터셋을 불러옴
+(x_train, y_train), (x_test, y_test)=ds.mnist.load_data()  #mnist 데이터셋을 불러옴
 print(x_train.shape, y_train.shape, x_test.shape, y_test.shape)    #불러온 데이터셋의 형태 출력
 plt.figure(figsize=(24,3))
 plt.suptitle('MNIST', fontsize=30)
@@ -161,3 +161,13 @@ for i in range(10):
     plt.xticks([]); plt.yticks([])
     plt.title(str(y_train[i]), fontsize=30)
 (x_train, y_train), (x_test,y_test)=ds.cifar10.load_data()
+print(x_train.shape, y_train.shape, x_test.shape, y_test.shape)
+class_names=[]
+plt.figure(figsize=(24,3))
+plt.suptitle('CIFAR-10', fontsize=30)
+for i in range(10):
+    plt.subplot(1,10,i+1)
+    plt.imshow(x_train[i])
+    plt.xticks([]); plt.yticks([])
+    plt.title(class_names[y_train[i,0]],fontsize=30)
+ """
