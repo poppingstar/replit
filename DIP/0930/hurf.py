@@ -21,11 +21,6 @@ apples=cv.HoughCircles(gray,cv.HOUGH_GRADIENT, 1, 1, param1=150,param2=40,minRad
 # 원의 중심, 반지름, 색상, 두께를 입력 받아 이미지에 원을 그림
 for i in apples[0]:
     cv.circle(img,(int(i[0]),int(i[1])),int(i[2]),(255,0,0),2)    
-"""
-i=apples[0][0]
-for _ in range(10):
-    cv.circle(img,(int(i[0]),int(i[1])),int(i[2]),(255,0,0),2)
-"""
     
 cv.imshow("Apple detection",img)  #detection된 이미지 출력
 
