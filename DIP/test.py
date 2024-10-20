@@ -18,3 +18,6 @@ print(a)
 cv.imshow('child.png', a)
 cv.waitKey(0) """
 
+import keras
+
+print(keras.__version__)
